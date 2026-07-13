@@ -15,6 +15,7 @@ public class SecurityConfiguration {
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(requests -> requests
                 .requestMatchers("/seller/signUp").permitAll()
+                .requestMatchers("/seller/issueToken").permitAll()
                 .anyRequest().authenticated()
             )
             .build();
