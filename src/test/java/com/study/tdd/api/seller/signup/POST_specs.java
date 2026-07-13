@@ -1,19 +1,16 @@
 package com.study.tdd.api.seller.signup;
 
-import com.study.tdd.TddApplication;
+import com.study.tdd.api.TddApiTest;
 import com.study.tdd.application.command.CreateSellerCommand;
 import com.study.tdd.domain.Seller;
 import com.study.tdd.infrastructure.persistence.SellerRepository;
-import com.study.tdd.support.TestPasswordEncoderConfiguration;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.resttestclient.TestRestTemplate;
-import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -28,23 +25,12 @@ import static com.study.tdd.support.UsernameGenerator.generateUsername;
  * <p>구현 세부사항이 아닌 <strong>입출력 계약(HTTP 요청 → 응답)</strong>만을 관찰하는 아웃사이드-인(outside-in) 방식으로 작성되었다.
  * 컨트롤러/서비스/리포지토리를 직접 호출하지 않고, 실제 서버를 띄운 뒤 HTTP로 왕복하여 시스템 전체 동작을 확인한다.</p>
  *
- * <h2>테스트 구성의 핵심</h2>
- * <ul>
- *   <li>{@code webEnvironment = RANDOM_PORT} — 실제 톰캣을 임의 포트로 기동하여 필터·시큐리티·직렬화까지 포함한 진짜 HTTP 경로를 검증한다.</li>
- *   <li>{@link TestPasswordEncoderConfiguration} — 운영용 BCrypt 대신 빠른 인코더를 {@code @Primary}로 주입해 테스트 속도를 확보한다(암호화 <em>결과</em>가 아니라 <em>계약</em>을 검증하므로 알고리즘 교체가 안전하다).</li>
- *   <li>{@code @AutoConfigureTestRestTemplate} — Spring Boot 4.1에서 분리된 {@link TestRestTemplate} 빈을 명시적으로 등록한다.</li>
- * </ul>
+ * <p>테스트 부트스트랩 구성(실서버 기동, 테스트용 인코더, {@link TestRestTemplate} 등록)은
+ * {@link TddApiTest}에 합성되어 있다 — 구성의 상세와 의도는 그쪽 문서를 참고.</p>
  *
  * <p>모든 케이스는 <strong>Arrange-Act-Assert</strong> 3단계로 구조화되어 있으며, 메서드명이 곧 하나의 명세 문장(given-when-then)을 이룬다.</p>
  */
-@SpringBootTest(
-        classes = {
-                TddApplication.class,
-                TestPasswordEncoderConfiguration.class
-        },
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
-)
-@AutoConfigureTestRestTemplate
+@TddApiTest
 @DisplayName("POST /seller/signUp")
 public class POST_specs {
 
