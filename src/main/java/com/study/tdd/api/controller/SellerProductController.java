@@ -6,7 +6,6 @@ import java.util.UUID;
 import com.study.tdd.api.controller.response.SellerProductView;
 import com.study.tdd.application.SellerProductQueryService;
 import com.study.tdd.application.query.FindSellerProduct;
-import com.study.tdd.domain.Product;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -33,19 +32,7 @@ public class SellerProductController {
         return ResponseEntity.of(
                 sellerProductQueryService
                         .findProduct(new FindSellerProduct(sellerId, id))
-                        .map(SellerProductController::toView)
-        );
-    }
-
-    private static SellerProductView toView(Product product) {
-        return new SellerProductView(
-                product.getId(),
-                product.getName(),
-                product.getImageUri(),
-                product.getDescription(),
-                product.getPriceAmount(),
-                product.getStockQuantity(),
-                product.getRegisteredTimeUtc()
+                        .map(SellerProductView::from)
         );
     }
 }

@@ -1,6 +1,7 @@
 package com.study.tdd.api;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 import com.study.tdd.api.controller.response.AccessTokenCarrier;
@@ -124,6 +125,10 @@ public record TestFixture(TestRestTemplate client) {
 		String path = location.getPath();
 		String id = path.substring("/seller/products/".length());
 		return UUID.fromString(id);
+	}
+
+	public List<UUID> registerProducts() {
+		return List.of(registerProduct(), registerProduct(), registerProduct());
 	}
 
 	public void setShopperAsDefaultUser(String email, String password) {
