@@ -3,7 +3,8 @@ package com.study.tdd.application;
 import java.util.Optional;
 
 import com.study.tdd.application.query.IssueSellerToken;
-import com.study.tdd.infrastructure.jwt.JwtComposer;
+import com.study.tdd.application.security.TokenIssuer;
+import com.study.tdd.application.security.TokenScope;
 import com.study.tdd.infrastructure.persistence.SellerRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,17 +16,17 @@ public class SellerIssueTokenService {
 
 	private final PasswordEncoder passwordEncoder;
 	private final SellerRepository repository;
-	private final JwtComposer jwtComposer;
+	private final TokenIssuer tokenIssuer;
 
 	@Autowired
 	public SellerIssueTokenService(
 		PasswordEncoder passwordEncoder,
 		SellerRepository repository,
-		JwtComposer jwtComposer
+		TokenIssuer tokenIssuer
 	) {
 		this.passwordEncoder = passwordEncoder;
 		this.repository = repository;
-		this.jwtComposer = jwtComposer;
+		this.tokenIssuer = tokenIssuer;
 	}
 
 	public Optional<String> issueToken(IssueSellerToken query) {
@@ -35,6 +36,6 @@ public class SellerIssueTokenService {
 				query.password(),
 				seller.getHashedPassword()
 			))
-			.map(seller -> jwtComposer.composeToken(seller.getId(), "seller"));
+			.map(seller -> tokenIssuer.issueToken(seller.getId(), TokenScope.SELLER));
 	}
 }
