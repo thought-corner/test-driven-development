@@ -2,7 +2,7 @@ package com.study.tdd.application.exception;
 
 public interface ErrorCode {
 
-    String code();
+	String code();
 
-    String message();
+	String message();
 }

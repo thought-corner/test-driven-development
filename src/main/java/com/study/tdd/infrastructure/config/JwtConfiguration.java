@@ -10,9 +10,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class JwtConfiguration {
 
-    @Bean
-    JwtKeyHolder jwtKeyHolder(@Value("${security.jwt.secret}") String secret) {
-        SecretKey key = new SecretKeySpec(secret.getBytes(), "HmacSHA256");
-        return new JwtKeyHolder(key);
-    }
+	@Bean
+	JwtKeyHolder jwtKeyHolder(@Value("${security.jwt.secret}") String secret) {
+		SecretKey key = new SecretKeySpec(secret.getBytes(), "HmacSHA256");
+		return new JwtKeyHolder(key);
+	}
 }

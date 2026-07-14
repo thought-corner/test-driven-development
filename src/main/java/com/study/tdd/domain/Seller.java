@@ -15,21 +15,21 @@ import lombok.Setter;
 @Setter
 public class Seller {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long dataKey;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long dataKey;
 
-    @Column(unique = true)
-    private UUID id;
+	@Column(unique = true)
+	private UUID id;
 
-    @Column(unique = true)
-    private String email;
+	@Column(unique = true)
+	private String email;
 
-    @Column(unique = true)
-    private String username;
+	@Column(unique = true)
+	private String username;
 
-    @Column(length = 1000)
-    private String hashedPassword;
+	@Column(length = 1000)
+	private String hashedPassword;
 
-    private String contactEmail;
+	private String contactEmail;
 }

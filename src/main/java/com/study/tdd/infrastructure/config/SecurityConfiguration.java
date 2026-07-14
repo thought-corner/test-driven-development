@@ -9,16 +9,16 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfiguration {
 
-    @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        return http
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(requests -> requests
-                .requestMatchers("/seller/signUp").permitAll()
-                .requestMatchers("/seller/issueToken").permitAll()
-                .requestMatchers("/shopper/signUp").permitAll()
-                .anyRequest().authenticated()
-            )
-            .build();
-    }
+	@Bean
+	SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+		return http
+			.csrf(AbstractHttpConfigurer::disable)
+			.authorizeHttpRequests(requests -> requests
+				.requestMatchers("/seller/signUp").permitAll()
+				.requestMatchers("/seller/issueToken").permitAll()
+				.requestMatchers("/shopper/signUp").permitAll()
+				.anyRequest().authenticated()
+			)
+			.build();
+	}
 }

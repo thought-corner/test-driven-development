@@ -2,14 +2,14 @@ package com.study.tdd.application.exception;
 
 public class BusinessException extends RuntimeException {
 
-    private final ErrorCode errorCode;
+	private final ErrorCode errorCode;
 
-    public BusinessException(ErrorCode errorCode) {
-        super(errorCode.message());
-        this.errorCode = errorCode;
-    }
+	public BusinessException(ErrorCode errorCode) {
+		super(errorCode.message());
+		this.errorCode = errorCode;
+	}
 
-    public ErrorCode getErrorCode() {
-        return errorCode;
-    }
+	public ErrorCode getErrorCode() {
+		return errorCode;
+	}
 }
