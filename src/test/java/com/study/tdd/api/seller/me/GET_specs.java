@@ -1,15 +1,12 @@
 package com.study.tdd.api.seller.me;
 
 import com.study.tdd.api.TddApiTest;
-import com.study.tdd.api.controller.response.AccessTokenCarrier;
+import com.study.tdd.api.TestFixture;
 import com.study.tdd.api.controller.response.SellerMeView;
-import com.study.tdd.application.command.CreateSellerCommand;
-import com.study.tdd.application.query.IssueSellerToken;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
 
 import static java.util.Objects.requireNonNull;
@@ -24,6 +21,9 @@ import static com.study.tdd.support.UsernameGenerator.generateUsername;
  *
  * <p>접근 토큰(access token)으로 인증한 판매자 자신의 정보를 반환하는 계약을 다룬다.
  * 토큰은 회원가입 → 토큰 발급을 거쳐 실제로 발행된 것을 사용하며, HTTP 입출력만 관찰한다.</p>
+ *
+ * <p>준비(arrange) 절차는 {@link TestFixture}로 끌어올려, 각 케이스는 저수준 HTTP 호출이
+ * 아니라 의도를 드러내는 한 줄로 사용자를 만든다.</p>
  *
  * <h2>테스트 시나리오</h2>
  * <ul>
@@ -40,27 +40,13 @@ public class GET_specs {
 
 	@Test
 	void 올바르게_요청하면_200_OK_상태코드를_반환한다(
-		@Autowired TestRestTemplate client
+		@Autowired TestFixture fixture
 	) {
 		// Arrange
-		String email = generateEmail();
-		String password = generatePassword();
-
-		client.postForEntity(
-			"/seller/signUp",
-			new CreateSellerCommand(
-				email,
-				generateUsername(),
-				password,
-				generateEmail()
-			),
-			Void.class
-		);
-
-		String token = issueToken(client, email, password);
+		String token = fixture.createSellerThenIssueToken();
 
 		// Act
-		ResponseEntity<SellerMeView> response = client.exchange(
+		ResponseEntity<SellerMeView> response = fixture.client().exchange(
 			get("/seller/me")
 				.header("Authorization", "Bearer " + token)
 				.build(),
@@ -73,10 +59,10 @@ public class GET_specs {
 
 	@Test
 	void 액세스_토큰을_사용하지_않으면_401_Unauthorized_상태코드를_반환한다(
-		@Autowired TestRestTemplate client
+		@Autowired TestFixture fixture
 	) {
 		// Act
-		ResponseEntity<SellerMeView> response = client.getForEntity(
+		ResponseEntity<SellerMeView> response = fixture.client().getForEntity(
 			"/seller/me",
 			SellerMeView.class
 		);
@@ -87,40 +73,15 @@ public class GET_specs {
 
 	@Test
 	void 서로_다른_판매자의_식별자는_서로_다르다(
-		@Autowired TestRestTemplate client
+		@Autowired TestFixture fixture
 	) {
 		// Arrange
-		String email1 = generateEmail();
-		String password1 = generatePassword();
-		client.postForEntity(
-			"/seller/signUp",
-			new CreateSellerCommand(
-				email1,
-				generateUsername(),
-				password1,
-				generateEmail()
-			),
-			Void.class
-		);
-		String token1 = issueToken(client, email1, password1);
-
-		String email2 = generateEmail();
-		String password2 = generatePassword();
-		client.postForEntity(
-			"/seller/signUp",
-			new CreateSellerCommand(
-				email2,
-				generateUsername(),
-				password2,
-				generateEmail()
-			),
-			Void.class
-		);
-		String token2 = issueToken(client, email2, password2);
+		String token1 = fixture.createSellerThenIssueToken();
+		String token2 = fixture.createSellerThenIssueToken();
 
 		// Act
-		SellerMeView seller1 = getSellerMe(client, token1);
-		SellerMeView seller2 = getSellerMe(client, token2);
+		SellerMeView seller1 = getSellerMe(fixture, token1);
+		SellerMeView seller2 = getSellerMe(fixture, token2);
 
 		// Assert
 		assertThat(seller1.id()).isNotEqualTo(seller2.id());
@@ -128,28 +89,19 @@ public class GET_specs {
 
 	@Test
 	void 같은_판매자의_식별자는_항상_같다(
-		@Autowired TestRestTemplate client
+		@Autowired TestFixture fixture
 	) {
 		// Arrange
 		String email = generateEmail();
 		String password = generatePassword();
-		client.postForEntity(
-			"/seller/signUp",
-			new CreateSellerCommand(
-				email,
-				generateUsername(),
-				password,
-				generateEmail()
-			),
-			Void.class
-		);
+		fixture.createSeller(email, generateUsername(), password, generateEmail());
 
-		String token1 = issueToken(client, email, password);
-		String token2 = issueToken(client, email, password);
+		String token1 = fixture.issueSellerToken(email, password);
+		String token2 = fixture.issueSellerToken(email, password);
 
 		// Act
-		SellerMeView seller1 = getSellerMe(client, token1);
-		SellerMeView seller2 = getSellerMe(client, token2);
+		SellerMeView seller1 = getSellerMe(fixture, token1);
+		SellerMeView seller2 = getSellerMe(fixture, token2);
 
 		// Assert
 		assertThat(seller1.id()).isEqualTo(seller2.id());
@@ -157,48 +109,27 @@ public class GET_specs {
 
 	@Test
 	void 판매자의_기본_정보가_올바르게_설정된다(
-		@Autowired TestRestTemplate client
+		@Autowired TestFixture fixture
 	) {
 		// Arrange
 		String email = generateEmail();
 		String username = generateUsername();
 		String password = generatePassword();
-		client.postForEntity(
-			"/seller/signUp",
-			new CreateSellerCommand(
-				email,
-				username,
-				password,
-				generateEmail()
-			),
-			Void.class
-		);
-
-		String token = issueToken(client, email, password);
+		String contactEmail = generateEmail();
+		fixture.createSeller(email, username, password, contactEmail);
+		fixture.setSellerAsDefaultUser(email, password);
 
 		// Act
-		SellerMeView actual = getSellerMe(client, token);
+		SellerMeView actual = fixture.getSeller();
 
 		// Assert
 		assertThat(actual.email()).isEqualTo(email);
 		assertThat(actual.username()).isEqualTo(username);
+		assertThat(actual.contactEmail()).isEqualTo(contactEmail);
 	}
 
-	private static String issueToken(
-		TestRestTemplate client,
-		String email,
-		String password
-	) {
-		AccessTokenCarrier carrier = client.postForObject(
-			"/seller/issueToken",
-			new IssueSellerToken(email, password),
-			AccessTokenCarrier.class
-		);
-		return requireNonNull(carrier).accessToken();
-	}
-
-	private static SellerMeView getSellerMe(TestRestTemplate client, String token) {
-		ResponseEntity<SellerMeView> response = client.exchange(
+	private static SellerMeView getSellerMe(TestFixture fixture, String token) {
+		ResponseEntity<SellerMeView> response = fixture.client().exchange(
 			get("/seller/me")
 				.header("Authorization", "Bearer " + token)
 				.build(),

@@ -1,15 +1,12 @@
 package com.study.tdd.api.shopper.me;
 
 import com.study.tdd.api.TddApiTest;
-import com.study.tdd.api.controller.response.AccessTokenCarrier;
+import com.study.tdd.api.TestFixture;
 import com.study.tdd.api.controller.response.ShopperMeView;
-import com.study.tdd.application.command.CreateShopperCommand;
-import com.study.tdd.application.query.IssueShopperToken;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
 
 import static java.util.Objects.requireNonNull;
@@ -26,6 +23,9 @@ import static com.study.tdd.support.UsernameGenerator.generateUsername;
  * 토큰은 회원가입 → 토큰 발급을 거쳐 실제로 발행된 것을 사용하며, HTTP 입출력만 관찰한다.
  * 판매자와 정책이 같지만 연락 이메일(contactEmail) 속성이 없다는 점이 다르다.</p>
  *
+ * <p>준비(arrange) 절차는 {@link TestFixture}로 끌어올려, 각 케이스는 저수준 HTTP 호출이
+ * 아니라 의도를 드러내는 한 줄로 사용자를 만든다.</p>
+ *
  * <h2>테스트 시나리오</h2>
  * <ul>
  *   <li>올바르게 요청하면 200 OK 상태코드를 반환한다.</li>
@@ -41,26 +41,13 @@ public class GET_specs {
 
 	@Test
 	void 올바르게_요청하면_200_OK_상태코드를_반환한다(
-		@Autowired TestRestTemplate client
+		@Autowired TestFixture fixture
 	) {
 		// Arrange
-		String email = generateEmail();
-		String password = generatePassword();
-
-		client.postForEntity(
-			"/shopper/signUp",
-			new CreateShopperCommand(
-				email,
-				generateUsername(),
-				password
-			),
-			Void.class
-		);
-
-		String token = issueToken(client, email, password);
+		String token = fixture.createShopperThenIssueToken();
 
 		// Act
-		ResponseEntity<ShopperMeView> response = client.exchange(
+		ResponseEntity<ShopperMeView> response = fixture.client().exchange(
 			get("/shopper/me")
 				.header("Authorization", "Bearer " + token)
 				.build(),
@@ -73,10 +60,10 @@ public class GET_specs {
 
 	@Test
 	void 액세스_토큰을_사용하지_않으면_401_Unauthorized_상태코드를_반환한다(
-		@Autowired TestRestTemplate client
+		@Autowired TestFixture fixture
 	) {
 		// Act
-		ResponseEntity<ShopperMeView> response = client.getForEntity(
+		ResponseEntity<ShopperMeView> response = fixture.client().getForEntity(
 			"/shopper/me",
 			ShopperMeView.class
 		);
@@ -87,38 +74,15 @@ public class GET_specs {
 
 	@Test
 	void 서로_다른_구매자의_식별자는_서로_다르다(
-		@Autowired TestRestTemplate client
+		@Autowired TestFixture fixture
 	) {
 		// Arrange
-		String email1 = generateEmail();
-		String password1 = generatePassword();
-		client.postForEntity(
-			"/shopper/signUp",
-			new CreateShopperCommand(
-				email1,
-				generateUsername(),
-				password1
-			),
-			Void.class
-		);
-		String token1 = issueToken(client, email1, password1);
-
-		String email2 = generateEmail();
-		String password2 = generatePassword();
-		client.postForEntity(
-			"/shopper/signUp",
-			new CreateShopperCommand(
-				email2,
-				generateUsername(),
-				password2
-			),
-			Void.class
-		);
-		String token2 = issueToken(client, email2, password2);
+		String token1 = fixture.createShopperThenIssueToken();
+		String token2 = fixture.createShopperThenIssueToken();
 
 		// Act
-		ShopperMeView shopper1 = getShopperMe(client, token1);
-		ShopperMeView shopper2 = getShopperMe(client, token2);
+		ShopperMeView shopper1 = getShopperMe(fixture, token1);
+		ShopperMeView shopper2 = getShopperMe(fixture, token2);
 
 		// Assert
 		assertThat(shopper1.id()).isNotEqualTo(shopper2.id());
@@ -126,27 +90,19 @@ public class GET_specs {
 
 	@Test
 	void 같은_구매자의_식별자는_항상_같다(
-		@Autowired TestRestTemplate client
+		@Autowired TestFixture fixture
 	) {
 		// Arrange
 		String email = generateEmail();
 		String password = generatePassword();
-		client.postForEntity(
-			"/shopper/signUp",
-			new CreateShopperCommand(
-				email,
-				generateUsername(),
-				password
-			),
-			Void.class
-		);
+		fixture.createShopper(email, generateUsername(), password);
 
-		String token1 = issueToken(client, email, password);
-		String token2 = issueToken(client, email, password);
+		String token1 = fixture.issueShopperToken(email, password);
+		String token2 = fixture.issueShopperToken(email, password);
 
 		// Act
-		ShopperMeView shopper1 = getShopperMe(client, token1);
-		ShopperMeView shopper2 = getShopperMe(client, token2);
+		ShopperMeView shopper1 = getShopperMe(fixture, token1);
+		ShopperMeView shopper2 = getShopperMe(fixture, token2);
 
 		// Assert
 		assertThat(shopper1.id()).isEqualTo(shopper2.id());
@@ -154,47 +110,25 @@ public class GET_specs {
 
 	@Test
 	void 구매자의_기본_정보가_올바르게_설정된다(
-		@Autowired TestRestTemplate client
+		@Autowired TestFixture fixture
 	) {
 		// Arrange
 		String email = generateEmail();
 		String username = generateUsername();
 		String password = generatePassword();
-		client.postForEntity(
-			"/shopper/signUp",
-			new CreateShopperCommand(
-				email,
-				username,
-				password
-			),
-			Void.class
-		);
-
-		String token = issueToken(client, email, password);
+		fixture.createShopper(email, username, password);
+		fixture.setShopperAsDefaultUser(email, password);
 
 		// Act
-		ShopperMeView actual = getShopperMe(client, token);
+		ShopperMeView actual = fixture.getShopper();
 
 		// Assert
 		assertThat(actual.email()).isEqualTo(email);
 		assertThat(actual.username()).isEqualTo(username);
 	}
 
-	private static String issueToken(
-		TestRestTemplate client,
-		String email,
-		String password
-	) {
-		AccessTokenCarrier carrier = client.postForObject(
-			"/shopper/issueToken",
-			new IssueShopperToken(email, password),
-			AccessTokenCarrier.class
-		);
-		return requireNonNull(carrier).accessToken();
-	}
-
-	private static ShopperMeView getShopperMe(TestRestTemplate client, String token) {
-		ResponseEntity<ShopperMeView> response = client.exchange(
+	private static ShopperMeView getShopperMe(TestFixture fixture, String token) {
+		ResponseEntity<ShopperMeView> response = fixture.client().exchange(
 			get("/shopper/me")
 				.header("Authorization", "Bearer " + token)
 				.build(),

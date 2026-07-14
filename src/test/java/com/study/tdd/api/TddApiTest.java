@@ -22,6 +22,8 @@ import org.springframework.boot.test.context.SpringBootTest;
  *       필터·시큐리티·직렬화까지 포함한 진짜 HTTP 경로를 검증한다.</li>
  *   <li>{@link TestPasswordEncoderConfiguration} — 운영용 인코더 대신 빠른 인코더를
  *       {@code @Primary}로 주입해 테스트 속도를 확보한다.</li>
+ *   <li>{@link TestFixtureConfiguration} — "가입 → 토큰 발급 → 인증된 요청" 준비 절차를
+ *       한 줄로 끌어올린 {@link TestFixture}를 테스트마다 새로({@code prototype}) 주입한다.</li>
  *   <li>{@code @AutoConfigureTestRestTemplate} — Spring Boot 4.1에서 분리된
  *       {@code TestRestTemplate} 빈을 등록한다.</li>
  * </ul>
@@ -31,7 +33,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest(
         classes = {
                 TddApplication.class,
-                TestPasswordEncoderConfiguration.class
+                TestPasswordEncoderConfiguration.class,
+                TestFixtureConfiguration.class
         },
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
