@@ -3,9 +3,12 @@ package com.study.tdd.application;
 import java.util.UUID;
 
 import com.study.tdd.application.command.CreateShopperCommand;
+import com.study.tdd.application.exception.BusinessException;
+import com.study.tdd.application.exception.UserErrorCode;
 import com.study.tdd.domain.Shopper;
 import com.study.tdd.infrastructure.persistence.ShopperRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,10 +33,18 @@ public class ShopperSignUpService {
 
     public void signUp(CreateShopperCommand command) {
         if (!isCommandValid(command)) {
-            throw new InvalidCommandException();
+            throw new BusinessException(UserErrorCode.INVALID_COMMAND);
         }
 
-        repository.save(createShopper(command));
+        saveShopper(createShopper(command));
+    }
+
+    private void saveShopper(Shopper shopper) {
+        try {
+            repository.save(shopper);
+        } catch (DataIntegrityViolationException exception) {
+            throw new BusinessException(UserErrorCode.DUPLICATE_USER_PROPERTY);
+        }
     }
 
     private Shopper createShopper(CreateShopperCommand command) {

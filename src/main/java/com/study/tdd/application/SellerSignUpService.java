@@ -3,9 +3,12 @@ package com.study.tdd.application;
 import java.util.UUID;
 
 import com.study.tdd.application.command.CreateSellerCommand;
+import com.study.tdd.application.exception.BusinessException;
+import com.study.tdd.application.exception.UserErrorCode;
 import com.study.tdd.domain.Seller;
 import com.study.tdd.infrastructure.persistence.SellerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -30,10 +33,18 @@ public class SellerSignUpService {
 
     public void signUp(CreateSellerCommand command) {
         if (!isCommandValid(command)) {
-            throw new InvalidCommandException();
+            throw new BusinessException(UserErrorCode.INVALID_COMMAND);
         }
 
-        repository.save(createSeller(command));
+        saveSeller(createSeller(command));
+    }
+
+    private void saveSeller(Seller seller) {
+        try {
+            repository.save(seller);
+        } catch (DataIntegrityViolationException exception) {
+            throw new BusinessException(UserErrorCode.DUPLICATE_USER_PROPERTY);
+        }
     }
 
     private Seller createSeller(CreateSellerCommand command) {
