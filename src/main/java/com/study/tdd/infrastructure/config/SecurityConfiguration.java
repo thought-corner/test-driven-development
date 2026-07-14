@@ -23,6 +23,7 @@ public class SecurityConfiguration {
 				.requestMatchers("/shopper/signUp").permitAll()
 				.requestMatchers("/shopper/issueToken").permitAll()
 				.requestMatchers("/seller/me").access(hasScope("seller"))
+				.requestMatchers("/seller/products", "/seller/products/**").access(hasScope("seller"))
 				.requestMatchers("/shopper/me").access(hasScope("shopper"))
 				.anyRequest().authenticated()
 			)

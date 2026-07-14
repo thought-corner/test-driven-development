@@ -1,10 +1,14 @@
 package com.study.tdd.api;
 
+import java.net.URI;
+import java.util.UUID;
+
 import com.study.tdd.api.controller.response.AccessTokenCarrier;
 import com.study.tdd.api.controller.response.SellerMeView;
 import com.study.tdd.api.controller.response.ShopperMeView;
 import com.study.tdd.application.command.CreateSellerCommand;
 import com.study.tdd.application.command.CreateShopperCommand;
+import com.study.tdd.application.command.RegisterProductCommand;
 import com.study.tdd.application.query.IssueSellerToken;
 import com.study.tdd.application.query.IssueShopperToken;
 
@@ -17,6 +21,7 @@ import org.springframework.web.client.RestTemplate;
 import static java.util.Objects.requireNonNull;
 import static com.study.tdd.support.EmailGenerator.generateEmail;
 import static com.study.tdd.support.PasswordGenerator.generatePassword;
+import static com.study.tdd.support.RegisterProductCommandGenerator.generateRegisterProductCommand;
 import static com.study.tdd.support.UsernameGenerator.generateUsername;
 
 /**
@@ -89,6 +94,36 @@ public record TestFixture(TestRestTemplate client) {
 		String password = generatePassword();
 		createSeller(email, generateUsername(), password, generateEmail());
 		return issueSellerToken(email, password);
+	}
+
+	public void createSellerThenSetAsDefaultUser() {
+		String email = generateEmail();
+		String password = generatePassword();
+		createSeller(email, generateUsername(), password, generateEmail());
+		setSellerAsDefaultUser(email, password);
+	}
+
+	public void createShopperThenSetAsDefaultUser() {
+		String email = generateEmail();
+		String password = generatePassword();
+		createShopper(email, generateUsername(), password);
+		setShopperAsDefaultUser(email, password);
+	}
+
+	public UUID registerProduct() {
+		return registerProduct(generateRegisterProductCommand());
+	}
+
+	public UUID registerProduct(RegisterProductCommand command) {
+		ResponseEntity<Void> response = client.postForEntity(
+			"/seller/products",
+			command,
+			Void.class
+		);
+		URI location = requireNonNull(response.getHeaders().getLocation());
+		String path = location.getPath();
+		String id = path.substring("/seller/products/".length());
+		return UUID.fromString(id);
 	}
 
 	public void setShopperAsDefaultUser(String email, String password) {
