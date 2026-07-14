@@ -21,7 +21,9 @@ public class SecurityConfiguration {
 				.requestMatchers("/seller/signUp").permitAll()
 				.requestMatchers("/seller/issueToken").permitAll()
 				.requestMatchers("/shopper/signUp").permitAll()
+				.requestMatchers("/shopper/issueToken").permitAll()
 				.requestMatchers("/seller/me").access(hasScope("seller"))
+				.requestMatchers("/shopper/me").access(hasScope("shopper"))
 				.anyRequest().authenticated()
 			)
 			.build();
