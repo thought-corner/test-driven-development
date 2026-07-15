@@ -1,0 +1,36 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, reopened]   # PR 열 때 자동 리뷰
+  issue_comment:
+    types: [created]            # PR 대화 탭 코멘트: "/review" 재리뷰 또는 "@claude" 후속 질문
+  pull_request_review_comment:
+    types: [created]            # 인라인 리뷰 스레드 답글: "@claude" 후속 질문
+
+jobs:
+  review:
+    # 실행 조건:
+    #  - pull_request(opened/reopened): 자동 리뷰
+    #  - PR 대화 코멘트(봇 제외): "/review"로 시작(재리뷰) 또는 "@claude" 멘션(후속 질문 답변)
+    #  - 인라인 리뷰 답글(봇 제외): "@claude" 멘션(후속 질문 답변)
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event_name == 'issue_comment'
+        && github.event.issue.pull_request != null
+        && github.event.comment.user.type != 'Bot'
+        && (startsWith(github.event.comment.body, '/review')
+            || contains(github.event.comment.body, '@claude'))) ||
+      (github.event_name == 'pull_request_review_comment'
+        && github.event.comment.user.type != 'Bot'
+        && contains(github.event.comment.body, '@claude'))
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    uses: thought-corner/ai-review-workflow/.github/workflows/claude-review.yml@v1
+    secrets: inherit
+    # 기본값을 바꾸고 싶을 때만:
+    # with:
+    #   model: claude-opus-4-8
+    #   max_turns: "20"
