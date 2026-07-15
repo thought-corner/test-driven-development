@@ -25,6 +25,7 @@ public class SecurityConfiguration {
 				.requestMatchers("/seller/me").access(hasScope("seller"))
 				.requestMatchers("/seller/products", "/seller/products/**").access(hasScope("seller"))
 				.requestMatchers("/shopper/me").access(hasScope("shopper"))
+				.requestMatchers("/shopper/products").access(hasScope("shopper"))
 				.anyRequest().authenticated()
 			)
 			.build();

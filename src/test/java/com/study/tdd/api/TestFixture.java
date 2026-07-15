@@ -1,10 +1,13 @@
 package com.study.tdd.api;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import com.study.tdd.api.controller.response.AccessTokenCarrier;
+import com.study.tdd.api.controller.response.PageCarrier;
+import com.study.tdd.api.controller.response.ProductView;
 import com.study.tdd.api.controller.response.SellerMeView;
 import com.study.tdd.api.controller.response.ShopperMeView;
 import com.study.tdd.application.command.CreateSellerCommand;
@@ -12,14 +15,17 @@ import com.study.tdd.application.command.CreateShopperCommand;
 import com.study.tdd.application.command.RegisterProductCommand;
 import com.study.tdd.application.query.IssueSellerToken;
 import com.study.tdd.application.query.IssueShopperToken;
+import com.study.tdd.infrastructure.persistence.ProductRepository;
 
 import org.springframework.boot.restclient.RestTemplateBuilder;
 import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import static java.util.Objects.requireNonNull;
+import static org.springframework.http.RequestEntity.get;
 import static com.study.tdd.support.EmailGenerator.generateEmail;
 import static com.study.tdd.support.PasswordGenerator.generatePassword;
 import static com.study.tdd.support.RegisterProductCommandGenerator.generateRegisterProductCommand;
@@ -36,12 +42,12 @@ import static com.study.tdd.support.UsernameGenerator.generateUsername;
  * {@link TestRestTemplate}을 소유한다. 따라서 {@link #setShopperAsDefaultUser}처럼
  * 클라이언트에 기본 인증 헤더를 심는 조작이 다른 테스트로 새지 않는다.</p>
  */
-public record TestFixture(TestRestTemplate client) {
+public record TestFixture(TestRestTemplate client, ProductRepository productRepository) {
 
-	public static TestFixture create(Environment environment) {
+	public static TestFixture create(Environment environment, ProductRepository productRepository) {
 		int port = environment.getRequiredProperty("local.server.port", Integer.class);
 		var builder = new RestTemplateBuilder().rootUri("http://localhost:" + port);
-		return new TestFixture(new TestRestTemplate(builder));
+		return new TestFixture(new TestRestTemplate(builder), productRepository);
 	}
 
 	public void createShopper(String email, String username, String password) {
@@ -129,6 +135,35 @@ public record TestFixture(TestRestTemplate client) {
 
 	public List<UUID> registerProducts() {
 		return List.of(registerProduct(), registerProduct(), registerProduct());
+	}
+
+	public List<UUID> registerProducts(int count) {
+		List<UUID> ids = new ArrayList<>();
+		for (int i = 0; i < count; i++) {
+			ids.add(registerProduct());
+		}
+		return ids;
+	}
+
+	public void deleteAllProducts() {
+		productRepository.deleteAll();
+	}
+
+	public String consumeProductPage() {
+		ResponseEntity<PageCarrier<ProductView>> response = client.exchange(
+			get("/shopper/products").build(),
+			new ParameterizedTypeReference<>() { }
+		);
+		return requireNonNull(response.getBody()).continuationToken();
+	}
+
+	public String consumeTwoProductPages() {
+		String token = consumeProductPage();
+		ResponseEntity<PageCarrier<ProductView>> response = client.exchange(
+			get("/shopper/products?continuationToken=" + token).build(),
+			new ParameterizedTypeReference<>() { }
+		);
+		return requireNonNull(response.getBody()).continuationToken();
 	}
 
 	public void setShopperAsDefaultUser(String email, String password) {
