@@ -177,4 +177,40 @@ public class POST_specs {
         // Assert
         assertThat(response.getStatusCode().value()).isEqualTo(400);
     }
+
+    @Test
+    void email_속성이_지정되지_않으면_400_Bad_Request_상태코드를_반환한다(
+            @Autowired TestRestTemplate client
+    ) {
+        // Arrange
+        String password = generatePassword();
+
+        // Act
+        ResponseEntity<AccessTokenCarrier> response = client.postForEntity(
+                "/shopper/issueToken",
+                new IssueShopperToken(null, password),
+                AccessTokenCarrier.class
+        );
+
+        // Assert
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+    }
+
+    @Test
+    void password_속성이_지정되지_않으면_400_Bad_Request_상태코드를_반환한다(
+            @Autowired TestRestTemplate client
+    ) {
+        // Arrange
+        String email = generateEmail();
+
+        // Act
+        ResponseEntity<AccessTokenCarrier> response = client.postForEntity(
+                "/shopper/issueToken",
+                new IssueShopperToken(email, null),
+                AccessTokenCarrier.class
+        );
+
+        // Assert
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+    }
 }
