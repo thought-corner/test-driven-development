@@ -1,0 +1,32 @@
+name: Claude Test Quality Review
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+    paths:
+      - "src/test/**"
+      - "**/*Test.java"
+      - "**/*Tests.java"
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: test-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  test-review:
+    if: >-
+      (github.event_name == 'pull_request') ||
+      (github.event_name == 'issue_comment'
+        && github.event.issue.pull_request != null
+        && github.event.comment.user.type != 'Bot'
+        && startsWith(github.event.comment.body, '/test-quality-review'))
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    uses: thought-corner/ai-review-workflow/.github/workflows/claude-review.yml@v1
+    secrets: inherit
+    with:
+      prompt_file: prompts/test-quality.md
